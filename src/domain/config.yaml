@@ -1,9 +1,12 @@
 extract: 
   model_path: ""
   log_path: ""
-  listing_api_urls:
-    - https://api.domain.com.au/v1/salesResults/Sydney/listings
-    - https://api.domain.com.au/v1/salesResults/Melbourne/listings
+  target_cities:
+    - Sydney
+    - Melbourne
+  api_urls:
+    salesResults: https://api.domain.com.au/v1/salesResults/
+    salesResults_listings: https://api.domain.com.au/v1/salesResults/{city}/listings
 load: 
   chunksize: 1000
 transform: 
