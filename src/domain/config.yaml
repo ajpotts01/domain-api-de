@@ -5,7 +5,7 @@ extract:
     - Sydney
     - Melbourne
   api_urls:
-    salesResults: https://api.domain.com.au/v1/salesResults/
+    salesResults: https://api.domain.com.au/v1/salesResults/{city}
     salesResults_listings: https://api.domain.com.au/v1/salesResults/{city}/listings
 load: 
   chunksize: 1000
