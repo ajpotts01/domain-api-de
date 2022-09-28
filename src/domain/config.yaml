@@ -1,0 +1,12 @@
+extract: 
+  model_path: ""
+  log_path: ""
+  listing_api_urls:
+    - https://api.domain.com.au/v1/salesResults/Sydney/listings
+    - https://api.domain.com.au/v1/salesResults/Melbourne/listings
+load: 
+  chunksize: 1000
+transform: 
+  model_path: ""
+meta: 
+  log_table: "pipeline_logs"
