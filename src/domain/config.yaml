@@ -1,6 +1,10 @@
 extract: 
   model_path: ""
   log_path: ""
+  cities:
+    - Sydney
+    - Melbourne
+    - Perth
   listing_api_urls:
     - https://api.domain.com.au/v1/salesResults/Sydney/listings
     - https://api.domain.com.au/v1/salesResults/Melbourne/listings
