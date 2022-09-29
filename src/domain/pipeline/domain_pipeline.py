@@ -6,6 +6,7 @@ from io import StringIO
 
 # Non-standard package imports
 from graphlib import TopologicalSorter
+from database.postgres import PostgresDB
 
 # Project class imports
 from utility.metadata_logger import MetadataLogger
@@ -57,6 +58,8 @@ def run_domain_pipeline():
 
     logging.info("Setting up database configuration")
     # AJP TODO: Database setup
+    db_engine_source = PostgresDB.create_pg_engine(db_target="source")
+    db_engine_target = PostgresDB.create_pg_engine(db_target="target")
 
     logging.info("Setting up extract/load workflow")
     # AJP TODO: This is just an example ExtractLoad instantiation - TBD with city params
