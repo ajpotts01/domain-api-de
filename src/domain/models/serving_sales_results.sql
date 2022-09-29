@@ -14,5 +14,5 @@ create table {{ target_table }} as (
         numberwithdrawn, 
         totalsales
     FROM staging_sales_results
-    ORDER BY city ASC, lastmodifieddate DESC;
+    ORDER BY city ASC, lastmodifieddate DESC
 );
