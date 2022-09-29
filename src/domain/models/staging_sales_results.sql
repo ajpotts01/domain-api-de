@@ -15,5 +15,4 @@ create table {{ target_table }} as (
         "numberWithdrawn" as numberwithdrawn, 
         "totalSales" as totalsales
     FROM raw_sales_result
-); 
-
+);
