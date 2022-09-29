@@ -12,6 +12,7 @@ from database.postgres import PostgresDB
 from utility.metadata_logger import MetadataLogger
 from domain.pipeline.config_domain_pipeline import DomainPipelineConfig
 from domain.pipeline.extract_load_pipeline import ExtractLoad
+from domain.etl.transform import Transform
 
 def log_inline_setup() -> StringIO:
     """
@@ -41,7 +42,8 @@ def log_metadata_setup(db_target: str) -> MetadataLogger:
     """
     metadata_logger = MetadataLogger(db_target=db_target)
 
-def run_domain_pipeline():
+def run_domain_pipeline() -> bool:
+    # AJP TODO: try/catch
     run_log = log_inline_setup()
     metadata_logger = log_metadata_setup(db_target = "target")
 
@@ -56,16 +58,61 @@ def run_domain_pipeline():
         target_log_table = pipeline_config.metadata_log_table
     )
 
-    logging.info("Setting up database configuration")
-    # AJP TODO: Database setup
-    db_engine_source = PostgresDB.create_pg_engine(db_target="source")
-    db_engine_target = PostgresDB.create_pg_engine(db_target="target")
+    try:
+        logging.info("Setting up database configuration")
+        # Database engine only required for target database - sources are APIs
+        db_engine_target = PostgresDB.create_pg_engine(db_target="target")
 
-    logging.info("Setting up extract/load workflow")
-    # AJP TODO: This is just an example ExtractLoad instantiation - TBD with city params
-    for next_city in pipeline_config.cities:
-        step_next_city = ExtractLoad()
+        logging.info("Setting up extract/load workflow")
+        ts = TopologicalSorter()
+        extract_load_steps = []
+        # AJP TODO: This is just an example ExtractLoad instantiation - TBD with city params
+        for next_api_name, next_api_url in pipeline_config.extract_apis.items():
+            step_next_city = ExtractLoad(
+                base_api_url = next_api_url,
+                cities = pipeline_config.extract_cities,
+                db_engine = db_engine_target,
+                table_name = next_api_name,
+                log_path = pipeline_config.extract_log_path
+            )
+            # Add node to workload independently, but also compile to list
+            # This way the list can be unpacked as a dependency later
+            extract_load_steps.append(step_next_city)
+            ts.add(step_next_city)
 
+        # AJP TODO: Example transformation pipeline
+        step_transform_stub = Transform(model = "example_model", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
+
+        # Generic unpack with example transform step
+        ts.add(step_transform_stub, *extract_load_steps)
+
+        logging.info("Executing completed workflow")
+        workflow = tuple(ts.static_order())
+        for next_step in workflow:
+            next_step.run()
+
+        logging.info("Pipeline has finished")
+
+        metadata_logger.log(
+            run_timestamp = dt.datetime.now(),
+            run_status = "completed",
+            run_id = metadata_logger.get_new_run_id(db_table=pipeline_config.metadata_log_table),
+            run_config = pipeline_config.config_raw,
+            run_log = run_log.getvalue(),
+            target_log_table = pipeline_config.metadata_log_table
+        )
+
+    except Exception as ex:
+        logging.exception(ex)
+
+        metadata_logger.log(
+            run_timestamp = dt.datetime.now(),
+            run_status = "error",
+            run_id = metadata_logger.get_new_run_id(db_table=pipeline_config.metadata_log_table),
+            run_config = pipeline_config.config_raw,
+            run_log = run_log.getvalue(),
+            target_log_table = pipeline_config.metadata_log_table
+        )        
 
 if (__name__ == "__main__"):
     run_domain_pipeline()

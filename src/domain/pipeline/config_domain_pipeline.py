@@ -24,9 +24,9 @@ class DomainPipelineConfig():
 
     metadata_log_table: str
 
-    extract_model_path: str
     extract_log_path: str
     extract_cities: list
+    extract_apis: dict
 
     load_chunksize: int
 
@@ -45,5 +45,6 @@ class DomainPipelineConfig():
         self.extract_model_path = self.config_raw["extract"]["model_path"]
         self.extract_log_path = self.config_raw["extract"]["log_path"]
         self.extract_cities = self.config_raw["extract"]["target_cities"]
+        self.extract_apis = self.config_raw["extract"]["api_urls"]
         self.load_chunksize = int(self.config_raw["load"]["chunksize"])
         self.transform_model_path = self.config_raw["transform"]["model_path"]

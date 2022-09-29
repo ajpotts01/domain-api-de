@@ -1,5 +1,4 @@
 extract: 
-  model_path: ""
   log_path: ""
   target_cities:
     - Sydney

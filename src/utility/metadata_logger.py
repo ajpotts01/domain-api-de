@@ -20,7 +20,7 @@ class MetadataLogger():
 
     def create_log_table(self,
         db_table: str
-    )->Table:
+    ) -> Table:
         log_model = MetaData()
         log_table = Table(
             db_table,
@@ -37,7 +37,7 @@ class MetadataLogger():
 
     def get_new_run_id(self,
         db_table: str
-    )->int:
+    ) -> int:
         log_table = self.create_log_table(db_table) # Will either return existing, or reference to new
         stmt = (select(func.max(log_table.c.run_id)))
 
@@ -54,7 +54,7 @@ class MetadataLogger():
         target_log_table: str,
         run_status: str = "started",
         run_log: str = ""
-    )->bool:
+    ) -> bool:
         log_table = self.create_log_table(db_table = target_log_table)
 
         # AJP TODO: If there's time - make this more robust by checking for log_table actually being a Table ref...
