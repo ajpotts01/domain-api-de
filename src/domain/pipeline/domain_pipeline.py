@@ -1,10 +1,12 @@
 # Python lib imports
 import os
 import logging
+import itertools
 import datetime as dt
 from io import StringIO
 
 # Non-standard package imports
+from dotenv import load_dotenv
 from graphlib import TopologicalSorter
 from database.postgres import PostgresDB
 
@@ -41,9 +43,11 @@ def log_metadata_setup(db_target: str) -> MetadataLogger:
         metadata_logger: MetadataLogger - a configured database logging class
     """
     metadata_logger = MetadataLogger(db_target=db_target)
+    return metadata_logger
 
 def run_domain_pipeline() -> bool:
     # AJP TODO: try/catch
+    load_dotenv("./domain_local.env")
     run_log = log_inline_setup()
     metadata_logger = log_metadata_setup(db_target = "target")
 
@@ -66,15 +70,23 @@ def run_domain_pipeline() -> bool:
         logging.info("Setting up extract/load workflow")
         ts = TopologicalSorter()
         extract_load_steps = []
-        # AJP TODO: This is just an example ExtractLoad instantiation - TBD with city params
-        for next_api_name, next_api_url in pipeline_config.extract_apis.items():
+        extract_combinations = list(itertools.product(pipeline_config.extract_apis.keys(), pipeline_config.extract_cities))
+
+        for next_api, next_city in extract_combinations:
+            # APIs are keyed by names so just use that as the raw table names.
+            # These keys are also used to pull the SQL Alchemy key columns from config.yaml
+            next_table_name = f"raw_{next_api}"
+            #print(next_table_name)
             step_next_city = ExtractLoad(
-                base_api_url = next_api_url,
-                cities = pipeline_config.extract_cities,
+                base_api_url = pipeline_config.extract_apis[next_api],
+                city = next_city,
                 db_engine = db_engine_target,
-                table_name = next_api_name,
-                log_path = pipeline_config.extract_log_path
+                table_name = next_table_name,
+                log_path = pipeline_config.extract_log_path,
+                key_columns = pipeline_config.load_key_columns[next_api],
+                mode = pipeline_config.load_mode
             )
+
             # Add node to workload independently, but also compile to list
             # This way the list can be unpacked as a dependency later
             extract_load_steps.append(step_next_city)
@@ -84,11 +96,12 @@ def run_domain_pipeline() -> bool:
         step_transform_stub = Transform(model = "example_model", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
 
         # Generic unpack with example transform step
-        ts.add(step_transform_stub, *extract_load_steps)
+        #ts.add(step_transform_stub, *extract_load_steps)
 
         logging.info("Executing completed workflow")
         workflow = tuple(ts.static_order())
         for next_step in workflow:
+            #print(next_step.base_api_url, next_step.city)
             next_step.run()
 
         logging.info("Pipeline has finished")
@@ -104,7 +117,7 @@ def run_domain_pipeline() -> bool:
 
     except Exception as ex:
         logging.exception(ex)
-
+        print(ex)
         metadata_logger.log(
             run_timestamp = dt.datetime.now(),
             run_status = "error",

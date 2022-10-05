@@ -28,7 +28,9 @@ class DomainPipelineConfig():
     extract_cities: list
     extract_apis: dict
 
+    load_mode: str
     load_chunksize: int
+    load_key_columns: dict
 
     transform_model_path: str
 
@@ -42,9 +44,10 @@ class DomainPipelineConfig():
                 self.config_raw = yaml.safe_load(file_stream)
 
         self.metadata_log_table = self.config_raw["meta"]["log_table"]
-        self.extract_model_path = self.config_raw["extract"]["model_path"]
         self.extract_log_path = self.config_raw["extract"]["log_path"]
         self.extract_cities = self.config_raw["extract"]["target_cities"]
         self.extract_apis = self.config_raw["extract"]["api_urls"]
+        self.load_mode = self.config_raw["load"]["mode"]
         self.load_chunksize = int(self.config_raw["load"]["chunksize"])
+        self.load_key_columns = self.config_raw["load"]["key_columns"]
         self.transform_model_path = self.config_raw["transform"]["model_path"]
