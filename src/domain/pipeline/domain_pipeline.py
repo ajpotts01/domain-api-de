@@ -6,7 +6,7 @@ import datetime as dt
 from io import StringIO
 
 # Non-standard package imports
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 from graphlib import TopologicalSorter
 from database.postgres import PostgresDB
 
@@ -47,7 +47,7 @@ def log_metadata_setup(db_target: str) -> MetadataLogger:
 
 def run_domain_pipeline() -> bool:
     # AJP TODO: try/catch
-    load_dotenv("./domain_local.env")
+    #load_dotenv("./domain_local.env")
     run_log = log_inline_setup()
     metadata_logger = log_metadata_setup(db_target = "target")
 
@@ -70,6 +70,7 @@ def run_domain_pipeline() -> bool:
         logging.info("Setting up extract/load workflow")
         ts = TopologicalSorter()
         extract_load_steps = []
+
         extract_combinations = list(itertools.product(pipeline_config.extract_apis.keys(), pipeline_config.extract_cities))
 
         for next_api, next_city in extract_combinations:
@@ -93,10 +94,21 @@ def run_domain_pipeline() -> bool:
             ts.add(step_next_city)
 
         # AJP TODO: Example transformation pipeline
-        step_transform_stub = Transform(model = "example_model", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
+        #step_transform_stub = Transform(model = "example_model", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
 
-        # Generic unpack with example transform step
-        #ts.add(step_transform_stub, *extract_load_steps)
+        print(os.getcwd())
+        print(pipeline_config.transform_model_path)
+
+        # AJP TODO: Figure out if dependencies etc. can be resolved dynamically and not have to explicitly 
+        list_models = os.listdir(pipeline_config.transform_model_path)
+
+        step_transform_staging_sales_results = Transform(model = "staging_sales_results", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
+        step_transform_serving_sales_results = Transform(model = "serving_sales_results", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
+        step_transform_serving_sales_averages = Transform(model = "serving_sales_averages", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
+
+        ts.add(step_transform_staging_sales_results, *extract_load_steps)
+        ts.add(step_transform_serving_sales_results, step_transform_staging_sales_results, *extract_load_steps)
+        ts.add(step_transform_serving_sales_averages, step_transform_staging_sales_results, *extract_load_steps)
 
         logging.info("Executing completed workflow")
         workflow = tuple(ts.static_order())

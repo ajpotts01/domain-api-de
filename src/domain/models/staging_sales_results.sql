@@ -2,7 +2,7 @@ drop table if exists {{ target_table }};
 
 create table {{ target_table }} as (
     SELECT 
-        CAST("City" AS TEXT) as City, 
+        CAST("city" AS TEXT) as city, 
         TO_TIMESTAMP("auctionedDate", 'YYYY-MM-DD')::date as auctioneddate,
         TO_TIMESTAMP("lastModifiedDateTime", 'YYYY-MM-DDTHH24:MI:ssZ') as lastmodified,
         TO_TIMESTAMP("lastModifiedDateTime", 'YYYY-MM-DDTHH24:MI:ssZ')::date as lastmodifieddate,
@@ -14,5 +14,5 @@ create table {{ target_table }} as (
         "numberUnreported" as numberunreported, 
         "numberWithdrawn" as numberwithdrawn, 
         "totalSales" as totalsales
-    FROM raw_sales_result
+    FROM raw_sales_results
 );

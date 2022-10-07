@@ -19,6 +19,6 @@ load:
       - propertyDetailsUrl
       - result
 transform: 
-  model_path: ""
+  model_path: "domain/models/"
 meta: 
   log_table: "pipeline_logs"

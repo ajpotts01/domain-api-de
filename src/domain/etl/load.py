@@ -71,7 +71,7 @@ class Load():
         # NOTE: This HAS to be done after schema is generated, but before the load.
         # pd.DataFrame.replace({np.nan: None}) actually changes ALL affected columns to object!
         # So you'll end up with incorrect data type mismatches etc.
-        db_friendly_data = data.replace({np.nan: None})
+        db_friendly_data = data.replace({np.nan: None})        
         # AJP TODO: Support chunksize. Maybe turn this into a function on its own.
         insert_stmt = postgresql.insert(table_schema).values(db_friendly_data.to_dict(orient='records'))
         upsert_stmt = insert_stmt.on_conflict_do_update(

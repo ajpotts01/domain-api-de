@@ -32,7 +32,7 @@ class Transform():
             logging.info(f"Building model: {self.model}")
         
             # read sql contents into a variable 
-            with open(f"models/{self.model}.sql") as f: 
+            with open(f"{self.model_path}/{self.model}.sql") as f: 
                 raw_sql = f.read()
 
             # parse sql using jinja 
