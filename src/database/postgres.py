@@ -7,7 +7,14 @@ class PostgresDB():
     @staticmethod
     def create_pg_engine(db_target:str="source"):
         """
-        create an engine to either `source` or `target`
+        Static helper function that creates an engine object for use in loading/transformation.
+        This function relies solely on environment variables to grab source or target database connection details.
+
+        Arguments:
+            db_target: Acceptable values of source or target - determines which environment variables to grab
+
+        Returns:
+            engine: A database engine (sqlalchemy.engine.Engine)
         """
         db_user = os.environ.get(f"{db_target}_db_user")
         db_password = os.environ.get(f"{db_target}_db_password")

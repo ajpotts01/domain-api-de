@@ -6,7 +6,6 @@ import datetime as dt
 from io import StringIO
 
 # Non-standard package imports
-#from dotenv import load_dotenv
 from graphlib import TopologicalSorter
 from database.postgres import PostgresDB
 
@@ -46,11 +45,10 @@ def log_metadata_setup(db_target: str) -> MetadataLogger:
     return metadata_logger
 
 def run_domain_pipeline() -> bool:
-    # AJP TODO: try/catch
-    #load_dotenv("./domain_local.env")
+    # region Initial config/setup 
     run_log = log_inline_setup()
     metadata_logger = log_metadata_setup(db_target = "target")
-
+    
     logging.info("Reading configuration")
     pipeline_config = DomainPipelineConfig("domain/config.yaml")
 
@@ -61,8 +59,12 @@ def run_domain_pipeline() -> bool:
         run_config = pipeline_config.config_raw,
         target_log_table = pipeline_config.metadata_log_table
     )
+    # endregion Initial config/setup
 
+    # region Main pipeline
     try:
+        # region Database/DAG
+        
         logging.info("Setting up database configuration")
         # Database engine only required for target database - sources are APIs
         db_engine_target = PostgresDB.create_pg_engine(db_target="target")
@@ -71,6 +73,12 @@ def run_domain_pipeline() -> bool:
         ts = TopologicalSorter()
         extract_load_steps = []
 
+        # endregion Database/DAG
+
+        # region Extract/Load
+        # Itertools gives the ability to combine the configured apis with the configured city parameters
+        # Then an individual ExtractLoad step can be created per API/city combination
+        # Is there a better way to do this? Without itertools? Zip isn't it - doesn't create the desired permutations
         extract_combinations = list(itertools.product(pipeline_config.extract_apis.keys(), pipeline_config.extract_cities))
 
         for next_api, next_city in extract_combinations:
@@ -92,32 +100,39 @@ def run_domain_pipeline() -> bool:
             # This way the list can be unpacked as a dependency later
             extract_load_steps.append(step_next_city)
             ts.add(step_next_city)
+        # endregion Extract/Load
 
-        # AJP TODO: Example transformation pipeline
-        #step_transform_stub = Transform(model = "example_model", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
+        # region Transform
 
-        print(os.getcwd())
-        print(pipeline_config.transform_model_path)
-
-        # AJP TODO: Figure out if dependencies etc. can be resolved dynamically and not have to explicitly 
+        # AJP TODO: Figure out if dependencies etc. can be resolved dynamically and not have to explicitly do it.
+        # This might work by splitting transforms up into staging/serving folders.
         list_models = os.listdir(pipeline_config.transform_model_path)
 
         step_transform_staging_sales_results = Transform(model = "staging_sales_results", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
         step_transform_serving_sales_results = Transform(model = "serving_sales_results", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
         step_transform_serving_sales_averages = Transform(model = "serving_sales_averages", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
-
+    
         ts.add(step_transform_staging_sales_results, *extract_load_steps)
         ts.add(step_transform_serving_sales_results, step_transform_staging_sales_results, *extract_load_steps)
         ts.add(step_transform_serving_sales_averages, step_transform_staging_sales_results, *extract_load_steps)
 
+        # endregion Transform
+
+        # region Workflow execution
+
         logging.info("Executing completed workflow")
         workflow = tuple(ts.static_order())
         for next_step in workflow:
-            #print(next_step.base_api_url, next_step.city)
+            if (type(next_step) == ExtractLoad):
+                logging.info(f"Running Extract/Load process for table: {next_step.table_name} and city: {next_step.city}")
+            elif (type(next_step) == Transform):
+                logging.info(f"Running Transform process for model: {next_step.model}")
+            
+            # This assumes all steps in the workflow have a run() method.
             next_step.run()
 
         logging.info("Pipeline has finished")
-
+    
         metadata_logger.log(
             run_timestamp = dt.datetime.now(),
             run_status = "completed",
@@ -126,10 +141,14 @@ def run_domain_pipeline() -> bool:
             run_log = run_log.getvalue(),
             target_log_table = pipeline_config.metadata_log_table
         )
+        # endregion Workflow execution
 
+        return True
+    # endregion Main pipeline
+    
     except Exception as ex:
         logging.exception(ex)
-        print(ex)
+        print(ex.with_traceback())
         metadata_logger.log(
             run_timestamp = dt.datetime.now(),
             run_status = "error",
@@ -137,7 +156,9 @@ def run_domain_pipeline() -> bool:
             run_config = pipeline_config.config_raw,
             run_log = run_log.getvalue(),
             target_log_table = pipeline_config.metadata_log_table
-        )        
+        )
 
+        return False
+              
 if (__name__ == "__main__"):
     run_domain_pipeline()

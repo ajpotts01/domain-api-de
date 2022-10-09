@@ -29,15 +29,18 @@ class Load():
 
     def load(self,
         data: pd.DataFrame 
-    ) -> bool:            
+    ) -> bool:
         if (self.mode == "upsert"):
-            print("Upsert")
+            logging.info(f"Performing conventional upsert into table {self.target_table}")
             success = self.load_upsert(data)
+        elif (self.mode == "upsert_chunks"):
+            logging.info(f"Performing upsert in chunks into table {self.target_table}")
+            success = self.load_upsert_chunks(data)
         elif (self.mode == "incremental"):
-            print("Incremental")
+            logging.info(f"Performing incremental load into table {self.target_table}")
             success = self.load_incremental(data)
         else:
-            print("Overwrite")
+            logging.info(f"Performing complete overwrite of table {self.target_table}")
             success = self.load_overwrite(data)
 
         return success
@@ -57,6 +60,15 @@ class Load():
     def load_upsert(self,
         data: pd.DataFrame
     ) -> bool:
+        """
+        Database upsert function for loading Domain API results.
+
+        Arguments:
+            data: Pandas dataframe containing the desired data to load after extract from Domain API
+
+        Returns:
+            True if successful (nothing if it fails)
+        """    
         table_meta = MetaData()
 
         logging.info(f"Generating table schema for {self.target_table}")
@@ -83,20 +95,31 @@ class Load():
         logging.info(f"A total of {result.rowcount} rows were added or modified.")
         return True
 
-    def load_upsert_chunks(self, df:pd.DataFrame)->bool:
+    def load_upsert_chunks(self, data:pd.DataFrame)->bool:
         """
-        performs the upsert with several rows at a time (i.e. a chunk of rows). this is better suited for very large sql statements that need to be broken into several steps. 
+        Database upsert function for loading large sets of Domain API results in chunks.
+        The functionality is largely the same as load_upsert, just breaking things up into chunks.
+        Assume Load.chunksize is set.
+
+        Arguments:
+            data: Pandas dataframe containing the desired data to load after extract from Domain API.
+
+        Returns:
+            True if successful
         """
         logging.info(f"Generating table schema for {self.target_table}")
         logging.info(f"Key columns are: {self.key_columns}")
         table_meta = MetaData()
-        table_schema = self.generate_sqlalchemy_schema(df = df, meta = table_meta)
+        table_schema = self.generate_sqlalchemy_schema(df = data, meta = table_meta)
         table_meta.create_all(self.db_engine)
 
         logging.info(f"Generated table schema. Now writing data")
 
-        max_length = len(df)
-        df = df.replace({np.nan: None})
+        max_length = len(data)
+        
+        # This needs to be performed for type safety (Postgres won't allow np.nan - treats as string)
+        # But needs to be done after schema generation - see load_upsert for more details
+        data = data.replace({np.nan: None})
         for i in range(0, max_length, self.chunksize):
             if i + self.chunksize >= max_length: 
                 lower_bound = i
@@ -104,7 +127,7 @@ class Load():
             else: 
                 lower_bound = i 
                 upper_bound = i + self.chunksize
-            insert_statement = postgresql.insert(table_schema).values(df.iloc[lower_bound:upper_bound].to_dict(orient='records'))
+            insert_statement = postgresql.insert(table_schema).values(data.iloc[lower_bound:upper_bound].to_dict(orient='records'))
             upsert_statement = insert_statement.on_conflict_do_update(
                 index_elements=self.key_columns,
                 set_={c.key: c for c in insert_statement.excluded if c.key not in self.key_columns})
@@ -115,7 +138,13 @@ class Load():
     def load_incremental(self,
         data: pd.DataFrame
     ) -> bool:
-        return True
+        """
+        Helper function for pure incremental loads. Does nothing yet - haven't established if this is going to be done for this project
+        Or if Domain API will even function in a way that allows it.
+
+        Coming back to this after cloud infrastructure implementation and documentation etc.
+        """    
+        raise NotImplementedError
 
     def get_sqlalchemy_column(self,
         col_name: str,

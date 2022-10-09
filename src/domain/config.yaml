@@ -8,7 +8,7 @@ extract:
     sales_results: https://api.domain.com.au/v1/salesResults/{city}
     sales_listings: https://api.domain.com.au/v1/salesResults/{city}/listings
 load: 
-  mode: "upsert"
+  mode: "upsert_chunks"
   chunksize: 1000
   key_columns:
     sales_results:
