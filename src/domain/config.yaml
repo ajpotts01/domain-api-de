@@ -1,16 +1,24 @@
 extract: 
-  model_path: ""
   log_path: ""
   target_cities:
     - Sydney
     - Melbourne
     - Adelaide
   api_urls:
-    salesResults: https://api.domain.com.au/v1/salesResults/{city}
-    salesResults_listings: https://api.domain.com.au/v1/salesResults/{city}/listings
+    sales_results: https://api.domain.com.au/v1/salesResults/{city}
+    sales_listings: https://api.domain.com.au/v1/salesResults/{city}/listings
 load: 
+  mode: "upsert_chunks"
   chunksize: 1000
+  key_columns:
+    sales_results:
+      - city
+      - lastModifiedDateTime
+    sales_listings:
+      - id
+      - propertyDetailsUrl
+      - result
 transform: 
-  model_path: ""
+  model_path: "domain/models/"
 meta: 
   log_table: "pipeline_logs"
