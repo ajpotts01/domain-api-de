@@ -109,10 +109,17 @@ def run_domain_pipeline() -> bool:
         list_models = os.listdir(pipeline_config.transform_model_path)
 
         step_transform_staging_sales_results = Transform(model = "staging_sales_results", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
+        step_transform_staging_sales_listings = Transform(model = "staging_sales_listings", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
+        
+        step_transform_staging_latest_listing_run = Transform(model = "staging_latest_listing_run", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
+
         step_transform_serving_sales_results = Transform(model = "serving_sales_results", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
         step_transform_serving_sales_averages = Transform(model = "serving_sales_averages", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
     
         ts.add(step_transform_staging_sales_results, *extract_load_steps)
+        ts.add(step_transform_staging_sales_listings, *extract_load_steps)
+        ts.add(step_transform_staging_latest_listing_run, step_transform_staging_sales_listings, *extract_load_steps)
+
         ts.add(step_transform_serving_sales_results, step_transform_staging_sales_results, *extract_load_steps)
         ts.add(step_transform_serving_sales_averages, step_transform_staging_sales_results, *extract_load_steps)
 
@@ -148,7 +155,8 @@ def run_domain_pipeline() -> bool:
     
     except Exception as ex:
         logging.exception(ex)
-        print(ex.with_traceback())
+        # Nick cmmt - Not sure why this is blocking the run
+        #print(ex.with_traceback())
         metadata_logger.log(
             run_timestamp = dt.datetime.now(),
             run_status = "error",
