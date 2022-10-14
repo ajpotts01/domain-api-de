@@ -7,7 +7,7 @@ create table {{ target_table }} as (
         price,
         "propertyDetailsUrl" as propertydetailsurl,
         "propertyType" as propertytype,
-        state,
+        UPPER(state) as state,
         postcode,
         "unitNumber" as unitnumber,
         "streetNumber" as streetnumber,
