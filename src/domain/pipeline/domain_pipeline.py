@@ -85,7 +85,6 @@ def run_domain_pipeline() -> bool:
             # APIs are keyed by names so just use that as the raw table names.
             # These keys are also used to pull the SQL Alchemy key columns from config.yaml
             next_table_name = f"raw_{next_api}"
-            #print(next_table_name)
             step_next_city = ExtractLoad(
                 base_api_url = pipeline_config.extract_apis[next_api],
                 city = next_city,
