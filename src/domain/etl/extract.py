@@ -84,7 +84,7 @@ class Extract():
             return_value['city'] = self.city
             return_value['url'] = self.get_api_url()
             return_value['execution_time'] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        
+
         return return_value
 
     def extract_api(self) -> pd.DataFrame:
@@ -101,7 +101,6 @@ class Extract():
 
         response_data = self.get_api_data()
         logging.info(f"API response: {response_data}")
-            
         return_value = self.api_response_to_dataframe(response_data = response_data)
 
         return return_value
