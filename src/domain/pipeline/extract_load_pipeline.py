@@ -60,6 +60,7 @@ class ExtractLoad():
 
         if (df_extract is None):
             logging.info("No data was extracted today.")
+            success = False
         else:
             logging.info(f"{len(df_extract)} rows extracted today.")
 
