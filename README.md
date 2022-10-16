@@ -29,8 +29,7 @@ The following items are required to build/run this project as intended:
 
 ## Cloud Architecture Options
 The following diagram shows a possible deployment on AWS:
-<img src="domain_pipeline_aws_reference_architecture.png" alt="Reference deployment on AWS">
-
+![images/domain_pipeline_aws_reference_architecture.png](images/domain_pipeline_aws_reference_architecture.png)
 This architecture:
 - Uses Amazon Elastic Container Service clusters and task definitions to orchestrate everything
 - Amazon Elastic Container Registry to store the Docker image
