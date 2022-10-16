@@ -13,7 +13,7 @@ def test_extract_sales_results():
     # Assemble
     pipeline_config = DomainPipelineConfig("domain/config.yaml")
 
-    load_dotenv("./domain_local.env")
+    load_dotenv("../domain_local.env")
 
     expected_columns = ['city', 'url', 'execution_time', 'auctionedDate',
        'lastModifiedDateTime', 'adjClearanceRate', 'median', 'numberAuctioned',
@@ -48,7 +48,7 @@ def test_extract_sales_listings():
     # Assemble
     pipeline_config = DomainPipelineConfig("domain/config.yaml")
 
-    load_dotenv("./domain_local.env")
+    load_dotenv("../domain_local.env")
 
     expected_columns = ['city', 'url', 'execution_time', 'agencyId', 'id', 'propertyDetailsUrl',
        'agencyName', 'agencyProfilePageUrl', 'agent', 'bathrooms', 'bedrooms',

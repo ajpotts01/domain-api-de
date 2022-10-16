@@ -85,7 +85,6 @@ def run_domain_pipeline() -> bool:
             # APIs are keyed by names so just use that as the raw table names.
             # These keys are also used to pull the SQL Alchemy key columns from config.yaml
             next_table_name = f"raw_{next_api}"
-            #print(next_table_name)
             step_next_city = ExtractLoad(
                 base_api_url = pipeline_config.extract_apis[next_api],
                 city = next_city,
@@ -161,7 +160,7 @@ def run_domain_pipeline() -> bool:
     except Exception as ex:
         logging.exception(ex)
         # Nick cmmt - Not sure why this is blocking the run
-        #print(ex.with_traceback())
+        print(ex)
         metadata_logger.log(
             run_timestamp = dt.datetime.now(),
             run_status = "error",

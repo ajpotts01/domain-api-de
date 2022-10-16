@@ -73,6 +73,20 @@ class Extract():
 
         return return_value
 
+    def api_response_to_dataframe(self, 
+        response_data: dict
+    ) -> pd.DataFrame:
+        return_value = None
+        
+        # Potential improvements: log a null result - although the log will show no rows were extracted today...
+        if (response_data is not None):
+            return_value = pd.json_normalize(data=response_data)
+            return_value['city'] = self.city
+            return_value['url'] = self.get_api_url()
+            return_value['execution_time'] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+        return return_value
+
     def extract_api(self) -> pd.DataFrame:
         """
         Main extract method. Calls Domain API endpoints, turns result into dataframe, then adds the city/API URL and execution time to the result.
@@ -87,11 +101,6 @@ class Extract():
 
         response_data = self.get_api_data()
         logging.info(f"API response: {response_data}")
-        
-        # Potential improvements: log a null result - although the log will show no rows were extracted today...
-        if (response_data is not None):
-            return_value = pd.json_normalize(data=response_data)
-            return_value['city'] = self.city
-            return_value['url'] = self.get_api_url()
-            return_value['execution_time'] = dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")    
+        return_value = self.api_response_to_dataframe(response_data = response_data)
+
         return return_value

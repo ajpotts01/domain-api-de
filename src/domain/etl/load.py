@@ -27,9 +27,18 @@ class Load():
         self.key_columns = key_columns
         self.chunksize = chunksize
 
+    def deduplicate_data(self,
+        data: pd.DataFrame
+    ) -> pd.DataFrame:
+        deduped_data = data.drop_duplicates(subset=self.key_columns)
+        return deduped_data
+
     def load(self,
         data: pd.DataFrame 
     ) -> bool:
+        
+        data = self.deduplicate_data(data)
+
         if (self.mode == "upsert"):
             logging.info(f"Performing conventional upsert into table {self.target_table}")
             success = self.load_upsert(data)
@@ -142,7 +151,7 @@ class Load():
         Helper function for pure incremental loads. Does nothing yet - haven't established if this is going to be done for this project
         Or if Domain API will even function in a way that allows it.
 
-        Coming back to this after cloud infrastructure implementation and documentation etc.
+        Coming back to this after cloud infrastructure implementation and documentation etc. if there is time.
         """    
         raise NotImplementedError
 
