@@ -1,6 +1,7 @@
 # Python lib imports
 import os
 import json
+from tracemalloc import DomainFilter
 
 # Non-standard package imports
 import pandas as pd
@@ -8,8 +9,11 @@ from dotenv import load_dotenv
 from sqlalchemy.engine import Engine
 
 # Project class imports
-from domain.etl.extract import Extract
-from domain.etl.load import Load
+from domain.extract.extract import Extract
+from domain.load.load import Load
+from domain.load.loaders.loader import Loader
+from domain.load.loaders.loader_file import LoaderFile
+from domain.load.loaders.loader_database import LoaderDatabase
 from domain.pipeline.config_domain_pipeline import DomainPipelineConfig
 from database.postgres import PostgresDB
 
@@ -25,6 +29,28 @@ def init_engine() -> Engine:
     db_engine = PostgresDB.create_pg_engine(db_target = "target")
 
     return db_engine
+
+def get_loader(pipeline_config: DomainPipelineConfig,
+    target_table_name: str,
+    db_engine: Engine,
+    load_mode: str,
+    load_method: str,
+    key_columns: list
+    ) -> Loader:
+
+    if (pipeline_config.load_method == "file"):
+        print("file")
+        return LoaderFile("test", "test")
+    elif (pipeline_config.load_method == "database"):
+        print("database")
+        return LoaderDatabase(
+            target_table = target_table_name,
+            db_engine = db_engine,
+            mode = load_mode,
+            key_columns = key_columns
+        )
+    
+    print("nothing")
 
 def get_mock_sales_results() -> dict:
     return_value = dict(
@@ -100,7 +126,13 @@ def test_load_results():
     pipeline_config = init_config()
 
     test_extractor = Extract("https://domain.api.com.au", "Test City")
-    test_loader = Load(target_table = table_name, db_engine = db_engine, mode = "upsert_chunks", key_columns=pipeline_config.load_key_columns["sales_results"])
+    test_loader: Loader = get_loader(
+        pipeline_config = pipeline_config,
+        target_table_name = table_name, 
+        db_engine = db_engine, 
+        load_method = "database",
+        load_mode = "upsert_chunks", 
+        key_columns = pipeline_config.load_key_columns["sales_results"])
 
     test_response = get_mock_sales_results()
     df_test_results = test_extractor.api_response_to_dataframe(test_response)
@@ -121,7 +153,14 @@ def test_load_listings():
     pipeline_config = init_config()
 
     test_extractor = Extract("https://domain.api.com.au", "Test City")
-    test_loader = Load(target_table = table_name, db_engine = db_engine, mode = "upsert_chunks", key_columns=pipeline_config.load_key_columns["sales_listings"])
+
+    test_loader: Loader = get_loader(
+        pipeline_config = pipeline_config,
+        target_table_name = table_name, 
+        db_engine = db_engine, 
+        load_method = "database",
+        load_mode = "upsert_chunks", 
+        key_columns = pipeline_config.load_key_columns["sales_listings"])    
 
     test_response = get_mock_sales_listings()
     df_test_results = test_extractor.api_response_to_dataframe(test_response)

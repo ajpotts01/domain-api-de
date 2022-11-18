@@ -6,7 +6,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 # Project class imports
-from domain.etl.extract import Extract
+from domain.extract.extract import Extract
 from domain.pipeline.config_domain_pipeline import DomainPipelineConfig
 
 def test_extract_sales_results():

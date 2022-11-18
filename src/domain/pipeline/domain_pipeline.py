@@ -13,7 +13,6 @@ from database.postgres import PostgresDB
 from utility.metadata_logger import MetadataLogger
 from domain.pipeline.config_domain_pipeline import DomainPipelineConfig
 from domain.pipeline.extract_load_pipeline import ExtractLoad
-from domain.etl.transform import Transform
 
 def log_inline_setup() -> StringIO:
     """
@@ -92,7 +91,8 @@ def run_domain_pipeline() -> bool:
                 table_name = next_table_name,
                 log_path = pipeline_config.extract_log_path,
                 key_columns = pipeline_config.load_key_columns[next_api],
-                mode = pipeline_config.load_mode
+                load_mode = pipeline_config.load_mode,
+                load_method = pipeline_config.load_method
             )
 
             # Add node to workload independently, but also compile to list
@@ -101,34 +101,6 @@ def run_domain_pipeline() -> bool:
             ts.add(step_next_city)
         # endregion Extract/Load
 
-        # region Transform
-
-        # AJP TODO: Figure out if dependencies etc. can be resolved dynamically and not have to explicitly do it.
-        # This might work by splitting transforms up into staging/serving folders.
-        list_models = os.listdir(pipeline_config.transform_model_path)
-
-        step_transform_staging_sales_results = Transform(model = "staging_sales_results", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
-        step_transform_staging_sales_listings = Transform(model = "staging_sales_listings", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
-        
-        step_transform_staging_latest_listing_run = Transform(model = "staging_latest_listing_run", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
-
-        step_transform_serving_sales_results = Transform(model = "serving_sales_results", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
-        step_transform_serving_sales_averages = Transform(model = "serving_sales_averages", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
-    
-        step_transform_serving_average_price = Transform(model = "serving_average_price", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
-        step_transform_serving_state_property_performance = Transform(model = "serving_state_property_performance", db_engine = db_engine_target, model_path = pipeline_config.transform_model_path)
-
-        ts.add(step_transform_staging_sales_results, *extract_load_steps)
-        ts.add(step_transform_staging_sales_listings, *extract_load_steps)
-        ts.add(step_transform_staging_latest_listing_run, step_transform_staging_sales_listings, *extract_load_steps)
-
-        ts.add(step_transform_serving_sales_results, step_transform_staging_sales_results, *extract_load_steps)
-        ts.add(step_transform_serving_sales_averages, step_transform_staging_sales_results, *extract_load_steps)
-        ts.add(step_transform_serving_average_price, step_transform_staging_sales_listings, *extract_load_steps)
-        ts.add(step_transform_serving_state_property_performance, step_transform_staging_sales_listings, *extract_load_steps)
-
-        # endregion Transform
-
         # region Workflow execution
 
         logging.info("Executing completed workflow")
@@ -136,8 +108,6 @@ def run_domain_pipeline() -> bool:
         for next_step in workflow:
             if (type(next_step) == ExtractLoad):
                 logging.info(f"Running Extract/Load process for table: {next_step.table_name} and city: {next_step.city}")
-            elif (type(next_step) == Transform):
-                logging.info(f"Running Transform process for model: {next_step.model}")
             
             # This assumes all steps in the workflow have a run() method.
             next_step.run()
@@ -159,7 +129,6 @@ def run_domain_pipeline() -> bool:
     
     except Exception as ex:
         logging.exception(ex)
-        # Nick cmmt - Not sure why this is blocking the run
         print(ex)
         metadata_logger.log(
             run_timestamp = dt.datetime.now(),

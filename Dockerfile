@@ -4,6 +4,8 @@ WORKDIR /src
 
 COPY /src . 
 
+COPY /ssl /ssl
+
 RUN pip install -r requirements.txt 
 
 ENV PYTHONPATH=/src

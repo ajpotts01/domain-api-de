@@ -1,13 +1,12 @@
-# Non-standard package imports
 import logging
-import pandas as pd
 import numpy as np
+import pandas as pd
 from sqlalchemy import Column, BigInteger, MetaData, Numeric, String, DateTime, Boolean, Table
 from sqlalchemy.engine import Engine
 from sqlalchemy.dialects import postgresql
+from domain.load.loaders.loader import Loader
 
-class Load():
-    
+class LoaderDatabase(Loader):
     db_engine: Engine
     target_table: str    
     mode: str
@@ -17,7 +16,7 @@ class Load():
     def __init__(self,
         target_table: str,
         db_engine: Engine,
-        mode: str,
+        mode: str = "full",
         key_columns: list = [],
         chunksize: int = 1000
     ):
@@ -25,20 +24,13 @@ class Load():
         self.db_engine = db_engine
         self.mode = mode
         self.key_columns = key_columns
-        self.chunksize = chunksize
+        self.chunksize = chunksize    
 
-    def deduplicate_data(self,
-        data: pd.DataFrame
-    ) -> pd.DataFrame:
-        deduped_data = data.drop_duplicates(subset=self.key_columns)
-        return deduped_data
 
     def load(self,
         data: pd.DataFrame 
     ) -> bool:
         
-        data = self.deduplicate_data(data)
-
         if (self.mode == "upsert"):
             logging.info(f"Performing conventional upsert into table {self.target_table}")
             success = self.load_upsert(data)

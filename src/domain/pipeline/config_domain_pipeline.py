@@ -16,12 +16,12 @@ class DomainPipelineConfig():
   extract_cities: list
   extract_apis: dict
 
+  load_method: str
   load_mode: str
+  load_file_format: str
   load_chunksize: int
   load_key_columns: dict
-
-  transform_model_path: str
-
+  
   def __init__(self,
       config_path: str
   ):
@@ -36,6 +36,7 @@ class DomainPipelineConfig():
       self.extract_cities = self.config_raw["extract"]["target_cities"]
       self.extract_apis = self.config_raw["extract"]["api_urls"]
       self.load_mode = self.config_raw["load"]["mode"]
+      self.load_method = self.config_raw["load"]["method"]
+      self.load_file_format = self.config_raw["load"]["file_format"]
       self.load_chunksize = int(self.config_raw["load"]["chunksize"])
       self.load_key_columns = self.config_raw["load"]["key_columns"]
-      self.transform_model_path = self.config_raw["transform"]["model_path"]

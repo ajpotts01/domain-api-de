@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 import os 
+import ssl
 
 class PostgresDB():
 
@@ -28,8 +29,23 @@ class PostgresDB():
             password = db_password,
             host = db_server_name, 
             port = 5432,
-            database = db_database_name, 
+            database = db_database_name
         )
 
-        engine = create_engine(connection_url)
+        require_ssl = False
+        ssl_path = ''
+
+        if ("require_ssl" in os.environ.keys() and "ssl_cert" in os.environ.keys()):
+            require_ssl = os.environ.get("require_ssl")
+            ssl_path = os.environ.get("ssl_cert")
+
+            if (require_ssl):
+                print(f"Setting SSL context - require_ssl: {require_ssl}, path: {ssl_path}")
+                ssl_context = ssl.create_default_context()
+                ssl_context.verify_mode = ssl.CERT_REQUIRED
+                ssl_context.load_verify_locations(ssl_path)
+            engine = create_engine(connection_url, connect_args = {'ssl_context': ssl_context})
+        else:
+            engine = create_engine(connection_url)
+
         return engine 
